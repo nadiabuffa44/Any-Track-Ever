@@ -219,8 +219,8 @@ footer{font-size:13px;color:var(--dim);padding-bottom:30px}
     <h3>How the draw works</h3>
     <ol>
       <li><b>Year:</b> picked in proportion to how many dated releases MusicBrainz lists for each year (counts and format figures snapshotted 18 Nov 2026).</li>
-      <li><b>Place:</b> a random release from that year is pulled live, and its release country becomes the place, so busier countries come up more often.</li>
-      <li><b>Record:</b> a random release from that year and country.</li>
+      <li><b>Place:</b> a random release from that year is pulled live, and the place is where its artist comes from (their country, plus hometown when known). Countries whose artists released more that year come up more often.</li>
+      <li><b>Record:</b> a random release from that year by an artist from that place. The first one is the release that picked the place; redraws search for others.</li>
       <li><b>Track:</b> one track from that record's tracklist.</li>
     </ol>
     <div class="conn"><h3 style="margin-top:22px">Sources</h3>
@@ -229,7 +229,7 @@ footer{font-size:13px;color:var(--dim);padding-bottom:30px}
       <form id="dform"><input id="dtok" type="password" placeholder="Paste your Discogs token" autocomplete="off" aria-label="Discogs token"><button class="pill">Save</button><button type="button" class="link" id="dclear">Remove</button></form>
       <p class="note" id="dstat"></p>
     </div>
-    <p>Redrawing a step keeps the steps above it and clears the ones below. Reissues and editions count as separate releases, because that's how MusicBrainz stores them. Inside big years, records are picked through random slices of the catalogue, so the draw is close to uniform but not perfectly so. Since the 2010s "Worldwide" comes up often: that's how MusicBrainz marks most digital releases. 2026 is only partly counted. MusicBrainz allows about one request per second, so facts fill in over a few seconds.</p>
+    <p>Redrawing a step keeps the steps above it and clears the ones below. Reissues and editions count as separate releases, because that's how MusicBrainz stores them. Inside big years, records are picked through random slices of the catalogue, so the draw is close to uniform but not perfectly so. 2026 is only partly counted. MusicBrainz allows about one request per second, so facts fill in over a few seconds.</p>
   </div>
 </section>
 <footer>Data from <a href="https://musicbrainz.org">MusicBrainz</a>, <a href="https://coverartarchive.org">Cover Art Archive</a>, <a href="https://www.discogs.com">Discogs</a>, <a href="https://www.deezer.com">Deezer</a>, <a href="https://listenbrainz.org">ListenBrainz</a> and <a href="https://en.wikipedia.org">Wikipedia</a>. Map: Natural Earth via world-atlas. Not affiliated with any of them.</footer>
@@ -253,7 +253,7 @@ const API='https://musicbrainz.org/ws/2/',MB='https://musicbrainz.org/';
 const VA='89ad4ac3-39f7-470e-963a-56509c546377';
 const STEPS=['year','place','record','track'];
 const NEXT={year:'Draw a year',place:'Draw a place',record:'Pull a record',track:'Drop the needle'};
-const MSG={year:'Spinning through every year of recorded music…',place:'Pulling a release from that year to find out where…',record:'Digging through the crate…',track:'Dropping the needle…'};
+const MSG={year:'Spinning through every year of recorded music…',place:'Pulling a release from that year and tracing where its artist is from…',record:'Digging for a record by an artist from there…',track:'Dropping the needle…'};
 const S={year:null,place:null,record:null,track:null};
 const FX={year:{},place:{},record:{},track:{}};
 const G={year:0,place:0,record:0,track:0};
@@ -329,17 +329,59 @@ function mainPart(f){
 /* ---------- draws ---------- */
 function weightedYear(){let r=Math.random()*TOTAL;for(const y of YEARS){r-=YC[y];if(r<0)return y;}return YEARS[YEARS.length-1];}
 async function drawYear(){const y=weightedYear();return {y,count:YC[y]};}
+/* Place = where the artist behind a random release from that year is from */
+const SUBS=['GB-ENG','GB-SCT','GB-WLS','GB-NIR'];
+const iso=x=>x?((x['iso-3166-1-codes']||[])[0]||((x['iso-3166-2-codes']||[])[0]||'').slice(0,2)||null):null;
+const subOf=x=>x&&(x['iso-3166-2-codes']||[]).some(c=>SUBS.includes(c))?x.name:null;
+async function upTo(area){
+  let cur=area;
+  for(let h=0;h<4&&cur;h++){
+    const c=iso(cur);if(c)return c;
+    let a;try{a=await mb(`area/${cur.id}?inc=area-rels`);}catch(e){return null;}
+    const c2=iso(a);if(c2)return c2;
+    const p=(a.relations||[]).find(r=>r.type==='part of'&&r.direction==='backward'&&r.area);cur=p&&p.area;
+  }
+  return null;
+}
+async function artistPlace(a){
+  const code=a.country||iso(a.area)||(a.area&&await upTo(a.area))||(a['begin-area']&&await upTo(a['begin-area']));
+  if(!code||['XW','XE','XU'].includes(code))return null;
+  const city=a['begin-area']&&(!a.area||a['begin-area'].id!==a.area.id)?a['begin-area'].name:null;
+  return {code,sub:subOf(a.area),city};
+}
+async function artistOf(rel){
+  const aid=firstArtist(rel['artist-credit']);if(!aid||aid===VA)return null;
+  let a;try{a=await mb(`artist/${aid}`);}catch(e){return null;}
+  const pl=await artistPlace(a);return pl&&{...pl,artist:a};
+}
 async function drawPlace(){
   const y=S.year.y;
-  const rel=await randomRelease(`date:${y}`,S.year.count,r=>r.country);
-  const c=rel.country,j=await search(`date:${y} AND country:${c}`,1);
-  return {code:c,name:placeName(c),phrase:placePhrase(c),count:j.count||1};
+  for(let t=0;t<8;t++){
+    const rel=await randomRelease(`date:${y}`,S.year.count);
+    const pl=await artistOf(rel);if(!pl)continue;
+    return {code:pl.code,sub:pl.sub,city:pl.city,name:pl.sub||placeName(pl.code),seed:rel.id,seedUsed:false,relCount:null};
+  }
+  throw new Error("Couldn't pin down where those artists are from. Try redrawing.");
+}
+async function candidateRecord(){
+  const P=S.place,Y=S.year.y;
+  if(P.seed&&!P.seedUsed){P.seedUsed=true;return P.seed;}
+  for(let t=0;t<10;t++){
+    let q=`date:${Y}`,count=S.year.count;
+    if(t%3!==2){
+      if(P.relCount==null){try{P.relCount=(await search(`date:${Y} AND country:${P.code}`,1)).count||0;}catch(e){P.relCount=0;}}
+      if(P.relCount){q+=` AND country:${P.code}`;count=P.relCount;}
+    }
+    const rel=await randomRelease(q,count);
+    const pl=await artistOf(rel);
+    if(pl&&pl.code===P.code&&(!P.sub||!pl.sub||pl.sub===P.sub))return rel.id;
+  }
+  throw new Error(`Couldn't find another ${Y} record by an artist from ${P.name} this time. Redraw to try again.`);
 }
 async function drawRecord(){
-  const q=`date:${S.year.y} AND country:${S.place.code}`;
   for(let t=0;t<4;t++){
-    const rel=await randomRelease(q,S.place.count);
-    const f=await mb(`release/${rel.id}?inc=recordings+artist-credits+labels+release-groups+genres+tags+url-rels+isrcs`);
+    const id=await candidateRecord();
+    const f=await mb(`release/${id}?inc=recordings+artist-credits+labels+release-groups+genres+tags+url-rels+isrcs`);
     const tracks=[];
     (f.media||[]).forEach((m,mi)=>(m.tracks||[]).forEach(tr=>tracks.push({...tr,disc:mi+1})));
     if(!tracks.length)continue;
@@ -350,9 +392,9 @@ async function drawRecord(){
       label:ln&&ln!=='[no label]'?ln:null,labelId:ln&&ln!=='[no label]'?li.label.id:null,selfReleased:ln==='[no label]',
       catno:li&&li['catalog-number']&&li['catalog-number']!=='[none]'?li['catalog-number']:null,
       formats:[...new Set((f.media||[]).map(m=>m.format).filter(Boolean))],discs:(f.media||[]).length,
-      type:rg['primary-type']||null,rg:rg.id,tracks,discogsId:((f.relations||[]).map(x=>x.url&&x.url.resource&&x.url.resource.match(/discogs\.com\/release\/(\d+)/)).find(Boolean)||[])[1]||null,genres:[...new Set(genres)],status:f.status,barcode:f.barcode};
+      type:rg['primary-type']||null,rg:rg.id,tracks,relCountry:f.country||null,discogsId:((f.relations||[]).map(x=>x.url&&x.url.resource&&x.url.resource.match(/discogs\.com\/release\/(\d+)/)).find(Boolean)||[])[1]||null,genres:[...new Set(genres)],status:f.status,barcode:f.barcode};
   }
-  throw new Error("The records here had no tracklists. Try redrawing.");
+  throw new Error("The records found had no tracklists. Try redrawing.");
 }
 async function drawTrack(){
   const R=S.record,i=rint(R.tracks.length),tr=R.tracks[i];
@@ -422,12 +464,13 @@ const LOAD={
     for(const k of want){if(FS[y][k]!=null)continue;try{FS[y][k]=(await search(`date:${y} AND ${Q[k]}`,1)).count;}catch(e){}if(g!==G.year)return;renderFacts();}
   },
   async place(g,F){
-    const c=S.place.code;
-    if(['XW','XE','XU'].includes(c))return;
-    const w=wiki(WIKI[c]||'Music of '+withThe(c));
-    try{F.total=(await search(`country:${c}`,1)).count;}catch(e){F.total=null}
-    if(g!==G.place)return;renderFacts();
+    const P=S.place,c=P.code,Y=S.year.y;
+    const w=wiki(WIKI[c]||'Music of '+(P.sub||withThe(c)));
     try{F.artists=(await mb(`artist?query=${encodeURIComponent('country:'+c)}&limit=1`)).count;}catch(e){F.artists=null}
+    if(g!==G.place)return;renderFacts();
+    if(P.relCount==null){try{P.relCount=(await search(`date:${Y} AND country:${c}`,1)).count||0;}catch(e){P.relCount=null}}
+    F.rel=P.relCount;if(g!==G.place)return;renderFacts();
+    try{F.total=(await search(`country:${c}`,1)).count;}catch(e){F.total=null}
     if(g!==G.place)return;renderFacts();
     F.wiki=await w;F.wikiDone=true;
   },
@@ -623,28 +666,25 @@ function factsYear(){
 }
 function factsPlace(){
   const P=S.place,Y=S.year,F=FX.place;
-  if(!P)return `<h2>Where was it released?</h2><p class="sub">${Y?`Next, a random release from ${Y.y} gets pulled, and its country becomes your place. Countries that released more music that year come up more often.`:'Draw a year first.'}</p>`;
-  const share=P.count/Y.count*100,c=P.code;
-  let body=`<h2>${esc(P.name)}</h2><p class="sub">${fmt(P.count)} releases came out ${esc(P.phrase)} in ${Y.y}</p>
-   <div class="big"><b>${share>=1?Math.round(share):share.toFixed(1)}%</b><span>of ${Y.y}'s releases, so about a 1 in ${odds(Y.count/P.count)} chance of landing here</span></div>`;
-  if(c==='XW')return body+`<p>MusicBrainz uses “Worldwide” for releases that came out everywhere at once. In practice that's mostly digital music on streaming and download stores, which is why it dominates recent years.</p>`;
-  if(c==='XE')return body+`<p>MusicBrainz uses “Europe” for releases distributed across several European countries at once rather than one market.</p>`;
-  if(c==='XU')return body;
-  if(HIST[c])body+=`<p class="note">${esc(P.name)} no longer exists. The map shows the countries on its former territory.</p>`;
-  body+=`<dl class="rows">${row('All years',F.total===undefined?W8:F.total!=null?fmt(F.total)+' releases in MusicBrainz':null)}${row('Artists',F.artists===undefined?W8:F.artists!=null?fmt(F.artists)+' artists listed from '+esc(withThe(c)):null)}</dl>`;
+  if(!P)return `<h2>Where is the artist from?</h2><p class="sub">${Y?`Next, a random release from ${Y.y} gets pulled, and the place is where its artist comes from. Countries whose artists released more music that year come up more often.`:'Draw a year first.'}</p>`;
+  const c=P.code,big=P.sub?withThe(c):withThe(c);
+  let body=`<h2>${esc(P.name)}</h2><p class="sub">${P.city?`Your next record comes from an artist from ${esc(P.city)}, ${esc(P.name)}.`:`Your next record comes from an artist from ${esc(P.name)}.`}</p>
+   <div class="big"><b>${F.artists===undefined?'…':F.artists!=null?fmt(F.artists):'?'}</b><span>artists from ${esc(big)} are listed in MusicBrainz</span></div>`;
+  if(HIST[c])body+=`<p class="note">${esc(placeName(c))} no longer exists. The map shows the countries on its former territory.</p>`;
+  body+=`<dl class="rows">${row('Hometown',P.city?esc(P.city):null)}${row(`Issued there in ${Y.y}`,F.rel===undefined?W8:F.rel!=null?fmt(F.rel)+' releases':null)}${row('Issued there, all years',F.total===undefined?W8:F.total!=null?fmt(F.total)+' releases':null)}</dl>`;
   if(F.wiki)body+=`<div class="wiki"><p>${esc(F.wiki.text)}</p><p><a class="src" href="${F.wiki.url}" target="_blank" rel="noopener">From Wikipedia: ${esc(F.wiki.title)}</a></p></div>`;
   else if(!F.wikiDone)body+=`<p class="wait">Looking up its music history…</p>`;
-  return body+`<p>${src(MB+'search?type=release&method=advanced&query='+encodeURIComponent('date:'+Y.y+' AND country:'+c))}</p>`;
+  return body+`<p>${src(MB+'search?type=artist&method=advanced&query='+encodeURIComponent('country:'+c))}</p>`;
 }
 function factsRecord(){
   const R=S.record,P=S.place,F=FX.record;
-  if(!R)return `<h2>Pull a record</h2><p class="sub">${P?`One random release from the ${fmt(P.count)} that came out ${esc(P.phrase)} in ${S.year.y}.`:'Draw a year and a place first.'}</p>`;
+  if(!R)return `<h2>Pull a record</h2><p class="sub">${P?`A random ${S.year.y} release by an artist from ${esc(P.name)}.`:'Draw a year and a place first.'}</p>`;
   const run=d3.sum(R.tracks,t=>t.length||0),L=F.labelInfo;
   const lab=R.label?esc(R.label)+(R.catno?` <span class="note">${esc(R.catno)}</span>`:''):R.selfReleased?'No label (self-released or white label)':'Not listed';
   const typ=R.type?(R.type==='EP'?'EP':R.type):null;
   return `<h2>${esc(R.title)}</h2><p class="sub">${esc(R.artist)}</p>
-   <div class="big"><b>1 in ${odds(P.count)}</b><span>chance of pulling this record from ${esc(withThe(P.code)==='Worldwide'?'the worldwide':withThe(P.code)+"'s")} ${S.year.y} crate</span></div>
-   <dl class="rows">${row('Type',typ&&esc(typ))}${row('Released',esc(R.date))}${row('Format',R.formats.length?esc(R.formats.join(', ')):'Not listed')}
+   <div class="big"><b>1 in ${odds(S.year.count)}</b><span>chance of pulling this exact record from ${S.year.y}'s releases</span></div>
+   <dl class="rows">${row('Type',typ&&esc(typ))}${row('Released',esc(R.date))}${row('Released in',R.relCountry?esc(R.relCountry==='XW'?'Worldwide (usually digital)':placeName(R.relCountry)):null)}${row('Format',R.formats.length?esc(R.formats.join(', ')):'Not listed')}
    ${row('Tracks',`${R.tracks.length}${R.discs>1?` on ${R.discs} discs`:''}${run?` · ${len(run)}`:''}`)}${row('Label',lab)}
    ${R.labelId?row('About the label',L===undefined?W8:L?[L.type&&esc(L.type.toLowerCase()),L.area&&'based in '+esc(L.area.name),L['life-span']&&L['life-span'].begin&&'founded '+esc(L['life-span'].begin.slice(0,4))].filter(Boolean).join(', ')||'No details yet':null):''}
    ${R.labelId?row('Label catalogue',F.labelCount===undefined?W8:F.labelCount!=null?fmt(F.labelCount)+' releases':null):''}
