@@ -36,7 +36,7 @@ header{padding:clamp(22px,3.5vw,44px) 0 8px}
 h1{font-size:clamp(34px,5vw,52px);line-height:1;margin:0;font-weight:900;font-variation-settings:"wdth" 68}
 .tag{color:var(--mute);margin:10px 0 0;max-width:64ch}
 /* stepper */
-.steps{list-style:none;margin:26px 0 0;padding:0;display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-top:2px solid var(--ink)}
+.steps{list-style:none;margin:26px 0 0;padding:0;display:grid;grid-template-columns:repeat(3,minmax(0,1fr));border-top:2px solid var(--ink)}
 .step{position:relative;padding:14px 14px 14px 0;border-bottom:1px solid var(--line);cursor:pointer;display:flex;flex-direction:column;gap:2px;min-height:118px}
 .step+.step{padding-left:14px;border-left:1px solid var(--line)}
 .step[aria-disabled=true]{cursor:default}
@@ -132,6 +132,17 @@ button:disabled{opacity:.4;cursor:default}
 .fbar .t i{display:block;height:100%;background:var(--label);border-radius:5px;transition:width .8s}
 .fbar .p{text-align:right;color:var(--mute);font-variant-numeric:tabular-nums}
 .note{font-size:13px;color:var(--dim)}
+.rechead{display:flex;gap:14px;align-items:center;flex:none}
+.thumb{width:76px;height:76px;position:relative;border-radius:4px;overflow:hidden;flex:none;background:#222;box-shadow:0 8px 20px rgba(0,0,0,.5)}
+.thumb img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+.thumb .gen{padding:6px}.thumb .gen b{font-size:11px}.thumb .gen span{display:none}
+.rechead b{display:block;font-size:18px;line-height:1.15;font-variation-settings:"wdth" 80}
+.rechead span{color:var(--mute);font-size:14px}
+.ytbox{padding:52px 18px 0}
+.ytbox:not([hidden])+.trackbox{padding-top:14px}
+.yt{position:relative;aspect-ratio:16/9;border-radius:10px;overflow:hidden;background:#000}
+.yt iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.ytbox .note{margin:8px 0 0}
 .ext{border-top:1px solid var(--line);padding-top:14px;margin-top:4px}
 .exth{font-weight:700;margin:0 0 8px}
 .player{display:grid;grid-template-columns:auto minmax(0,1fr);gap:8px 14px;align-items:center;margin:0 0 18px}
@@ -159,7 +170,7 @@ button:disabled{opacity:.4;cursor:default}
 .how ol{padding-left:1.2em}
 footer{font-size:13px;color:var(--dim);padding-bottom:30px}
 @media(max-width:900px){.scene,.bottom{grid-template-columns:minmax(0,1fr)}}
-@media(max-width:640px){.steps{grid-template-columns:repeat(2,minmax(0,1fr))}.step:nth-child(3){padding-left:0;border-left:0}.step{min-height:104px}}
+@media(max-width:640px){.step{min-height:104px;padding-right:8px}.step+.step{padding-left:8px}}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -170,14 +181,13 @@ footer{font-size:13px;color:var(--dim);padding-bottom:30px}
     <svg class="logo" viewBox="0 0 100 100" aria-hidden="true"><g id="logoSpin"><circle cx="50" cy="50" r="48" fill="#141417"/><circle cx="50" cy="50" r="38" fill="none" stroke="#2a2a30"/><circle cx="50" cy="50" r="30" fill="none" stroke="#2a2a30"/><circle cx="50" cy="50" r="18" fill="var(--label)"/><path d="M50 32 a18 18 0 0 1 18 18" stroke="var(--hot)" stroke-width="4" fill="none"/><circle cx="50" cy="50" r="2.5" fill="#0c0c0f"/></g></svg>
     <h1>Any Track Ever</h1>
   </div>
-  <p class="tag">One track, drawn at random from every dated release in MusicBrainz, the open music encyclopedia. Year, place, record, track: each one picked from real catalogue data.</p>
+  <p class="tag">One track, drawn at random from every dated release in MusicBrainz, the open music encyclopedia. Year, place, track: each one picked from real catalogue data.</p>
 </header>
 
 <ol class="steps" id="steps">
   <li class="step" data-step="year" tabindex="0"><span class="side">A1</span><span class="k">Year</span><span class="v empty" id="v-year">Not drawn yet</span><button class="re" data-redo="year" hidden>Redraw</button></li>
   <li class="step" data-step="place" tabindex="0"><span class="side">A2</span><span class="k">Place</span><span class="v empty" id="v-place">Not drawn yet</span><button class="re" data-redo="place" hidden>Redraw</button></li>
-  <li class="step" data-step="record" tabindex="0"><span class="side">B1</span><span class="k">Record</span><span class="v empty" id="v-record">Not drawn yet</span><button class="re" data-redo="record" hidden>Redraw</button></li>
-  <li class="step" data-step="track" tabindex="0"><span class="side">B2</span><span class="k">Track</span><span class="v empty" id="v-track">Not drawn yet</span><button class="re" data-redo="track" hidden>Redraw</button></li>
+  <li class="step" data-step="track" tabindex="0"><span class="side">B1</span><span class="k">Track</span><span class="v empty" id="v-track">Not drawn yet</span><button class="re" data-redo="track" hidden>Redraw</button></li>
 </ol>
 <div class="controls">
   <button class="go" id="go">Draw a year</button>
@@ -198,11 +208,9 @@ footer{font-size:13px;color:var(--dim);padding-bottom:30px}
       <div class="tools"><button class="tool" id="pzBtn" hidden>Whole world</button></div>
       <div class="fig" id="fig-place"><svg id="svg-map"></svg></div>
     </div>
-    <div class="view" data-view="record" hidden>
-      <div class="cratebox" id="cratebox"></div>
-    </div>
     <div class="view" data-view="track" hidden>
       <span class="vtitle" id="trackTitle">Tracklist</span>
+      <div class="ytbox" id="ytbox" hidden></div>
       <div class="trackbox" id="trackbox"></div>
     </div>
   </div>
@@ -220,19 +228,15 @@ footer{font-size:13px;color:var(--dim);padding-bottom:30px}
     <ol>
       <li><b>Year:</b> picked in proportion to how many dated releases MusicBrainz lists for each year (counts and format figures snapshotted 18 Nov 2026).</li>
       <li><b>Place:</b> a random release from that year is pulled live, and the place is where its artist comes from (their country, plus hometown when known). Countries whose artists released more that year come up more often.</li>
-      <li><b>Record:</b> a random release from that year by an artist from that place. The first one is the release that picked the place; redraws search for others.</li>
-      <li><b>Track:</b> one track from that record's tracklist.</li>
+      <li><b>Track:</b> a random release from that year by an artist from that place, then one track from its tracklist. The first draw uses the release that picked the place; redraws search for others.</li>
     </ol>
     <div class="conn"><h3 style="margin-top:22px">Sources</h3>
-      <p>Draws and most facts come from MusicBrainz. Records linked to Discogs show collector stats, tracks get 30-second previews from Deezer when it has them, and play counts come from ListenBrainz.</p>
-      <p><b>Discogs token (optional).</b> Add a free personal token from <a href="https://www.discogs.com/settings/developers" target="_blank" rel="noopener">discogs.com/settings/developers</a> to look up records that aren't linked. It's stored only in this browser.</p>
-      <form id="dform"><input id="dtok" type="password" placeholder="Paste your Discogs token" autocomplete="off" aria-label="Discogs token"><button class="pill">Save</button><button type="button" class="link" id="dclear">Remove</button></form>
-      <p class="note" id="dstat"></p>
+      <p>Draws and most facts come from MusicBrainz. Tracks get 30-second previews from Deezer when it has them, videos from YouTube, play counts from ListenBrainz, and country summaries from Wikipedia.</p>
     </div>
     <p>Redrawing a step keeps the steps above it and clears the ones below. Reissues and editions count as separate releases, because that's how MusicBrainz stores them. Inside big years, records are picked through random slices of the catalogue, so the draw is close to uniform but not perfectly so. 2026 is only partly counted. MusicBrainz allows about one request per second, so facts fill in over a few seconds.</p>
   </div>
 </section>
-<footer>Data from <a href="https://musicbrainz.org">MusicBrainz</a>, <a href="https://coverartarchive.org">Cover Art Archive</a>, <a href="https://www.discogs.com">Discogs</a>, <a href="https://www.deezer.com">Deezer</a>, <a href="https://listenbrainz.org">ListenBrainz</a> and <a href="https://en.wikipedia.org">Wikipedia</a>. Map: Natural Earth via world-atlas. Not affiliated with any of them.</footer>
+<footer>Data from <a href="https://musicbrainz.org">MusicBrainz</a>, <a href="https://coverartarchive.org">Cover Art Archive</a>, <a href="https://www.youtube.com">YouTube</a>, <a href="https://www.deezer.com">Deezer</a>, <a href="https://listenbrainz.org">ListenBrainz</a> and <a href="https://en.wikipedia.org">Wikipedia</a>. Map: Natural Earth via world-atlas. Not affiliated with any of them.</footer>
 </div>
 <div id="tip"></div>
 
@@ -251,9 +255,9 @@ const ATLAS={"type":"Topology","objects":{"countries":{"type":"GeometryCollectio
 
 const API='https://musicbrainz.org/ws/2/',MB='https://musicbrainz.org/';
 const VA='89ad4ac3-39f7-470e-963a-56509c546377';
-const STEPS=['year','place','record','track'];
-const NEXT={year:'Draw a year',place:'Draw a place',record:'Pull a record',track:'Drop the needle'};
-const MSG={year:'Spinning through every year of recorded music…',place:'Pulling a release from that year and tracing where its artist is from…',record:'Digging for a record by an artist from there…',track:'Dropping the needle…'};
+const STEPS=['year','place','track'];
+const NEXT={year:'Draw a year',place:'Draw a place',track:'Drop the needle'};
+const MSG={year:'Spinning through every year of recorded music…',place:'Pulling a release from that year and tracing where its artist is from…',record:'',track:'Digging for a record by an artist from there, then dropping the needle…'};
 const S={year:null,place:null,record:null,track:null};
 const FX={year:{},place:{},record:{},track:{}};
 const G={year:0,place:0,record:0,track:0};
@@ -381,7 +385,7 @@ async function candidateRecord(){
 async function drawRecord(){
   for(let t=0;t<4;t++){
     const id=await candidateRecord();
-    const f=await mb(`release/${id}?inc=recordings+artist-credits+labels+release-groups+genres+tags+url-rels+isrcs`);
+    const f=await mb(`release/${id}?inc=recordings+artist-credits+labels+release-groups+genres+tags+url-rels+isrcs+recording-level-rels`);
     const tracks=[];
     (f.media||[]).forEach((m,mi)=>(m.tracks||[]).forEach(tr=>tracks.push({...tr,disc:mi+1})));
     if(!tracks.length)continue;
@@ -392,7 +396,7 @@ async function drawRecord(){
       label:ln&&ln!=='[no label]'?ln:null,labelId:ln&&ln!=='[no label]'?li.label.id:null,selfReleased:ln==='[no label]',
       catno:li&&li['catalog-number']&&li['catalog-number']!=='[none]'?li['catalog-number']:null,
       formats:[...new Set((f.media||[]).map(m=>m.format).filter(Boolean))],discs:(f.media||[]).length,
-      type:rg['primary-type']||null,rg:rg.id,tracks,relCountry:f.country||null,discogsId:((f.relations||[]).map(x=>x.url&&x.url.resource&&x.url.resource.match(/discogs\.com\/release\/(\d+)/)).find(Boolean)||[])[1]||null,genres:[...new Set(genres)],status:f.status,barcode:f.barcode};
+      type:rg['primary-type']||null,rg:rg.id,tracks,relCountry:f.country||null,genres:[...new Set(genres)],status:f.status,barcode:f.barcode};
   }
   throw new Error("The records found had no tracklists. Try redrawing.");
 }
@@ -400,7 +404,7 @@ async function drawTrack(){
   const R=S.record,i=rint(R.tracks.length),tr=R.tracks[i];
   const ac=tr['artist-credit']||(tr.recording&&tr.recording['artist-credit']);
   return {i,title:tr.title,artist:ac?credit(ac):R.artist,artistId:ac?firstArtist(ac):R.artistId,length:tr.length||(tr.recording&&tr.recording.length),
-    number:tr.number,total:R.tracks.length,recording:tr.recording&&tr.recording.id,disc:tr.disc,isrcs:(tr.recording&&tr.recording.isrcs)||[],artist0:ac&&ac[0]?(ac[0].name||ac[0].artist&&ac[0].artist.name):(R.artist||'')};
+    number:tr.number,total:R.tracks.length,recording:tr.recording&&tr.recording.id,disc:tr.disc,yt:ytFromRels(tr.recording&&tr.recording.relations),isrcs:(tr.recording&&tr.recording.isrcs)||[],artist0:ac&&ac[0]?(ac[0].name||ac[0].artist&&ac[0].artist.name):(R.artist||'')};
 }
 const credit=ac=>(ac||[]).map(c=>(c.name||(c.artist&&c.artist.name)||'')+(c.joinphrase||'')).join('')||'Unknown artist';
 const firstArtist=ac=>ac&&ac[0]&&ac[0].artist&&ac[0].artist.id;
@@ -436,24 +440,37 @@ async function listenFacts(T,F){
   }
   return out;
 }
-const DKEY='any-track-ever-discogs';
-const dtok=()=>{try{return localStorage.getItem(DKEY)||''}catch(e){return ''}};
-async function discogsFacts(R){
-  const tok=dtok(),tq=tok?'token='+encodeURIComponent(tok):'';
-  let id=R.discogsId,how='link';
-  if(!id&&tok){
-    const q=R.barcode?`barcode=${encodeURIComponent(R.barcode)}`:`release_title=${encodeURIComponent(R.title)}&artist=${encodeURIComponent(R.artist)}`;
-    const r=await fetch(`https://api.discogs.com/database/search?type=release&per_page=5&${q}&${tq}`);
-    if(r.status===401)return {error:'Your Discogs token was rejected. Check it under Sources below.'};
-    const j=r.ok?await r.json():{};
-    const hit=(j.results||[]).find(x=>R.barcode||norm(x.title).includes(norm(R.title)));
-    if(hit){id=hit.id;how='search';}
+/* YouTube: MusicBrainz links first; optional API key for search (restrict it to your site's address in Google Cloud) */
+const YT_KEY='';
+function ytFromRels(rels){
+  for(const r of rels||[]){const u=r.url&&r.url.resource||'';const m=u.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/)([\w-]{11})/);if(m)return m[1];}
+  return null;
+}
+async function ytSearch(T){
+  const q=`${T.artist0} ${T.title}`;
+  const r=await fetch(`https://www.googleapis.com/youtube/v3/search?part=snippet&type=video&maxResults=1&videoEmbeddable=true&q=${encodeURIComponent(q)}&key=${YT_KEY}`);
+  if(!r.ok)throw new Error(r.status===403?"YouTube search isn't available right now (daily limit reached, or the key isn't allowed on this site).":'YouTube answered '+r.status+'.');
+  const it=((await r.json()).items||[])[0];
+  return it?{id:it.id.videoId,title:it.snippet.title,how:'search'}:null;
+}
+function ytClose(){const b=$('ytbox');b.innerHTML='';b.hidden=true;}
+async function playYouTube(){
+  const T=S.track,F=FX.track,g=G.track;if(!T)return;
+  let v=T.yt?{id:T.yt,how:'link'}:F.ytFound||null;
+  if(!v&&YT_KEY){
+    $('ytStatus')&&($('ytStatus').textContent='Searching YouTube…');
+    try{v=await ytSearch(T);}catch(e){if($('ytStatus'))$('ytStatus').textContent=e.message;return;}
+    if(g!==G.track)return;
+    F.ytFound=v;
+    if(!v){if($('ytStatus'))$('ytStatus').textContent='No match found on YouTube.';return;}
   }
-  if(!id)return {none:true,canSearch:!tok};
-  const r=await fetch(`https://api.discogs.com/releases/${id}${tq?'?'+tq:''}`);
-  if(!r.ok)return {error:r.status===429?'Discogs is rate-limiting. Try again in a minute.':'Discogs answered '+r.status+'.'};
-  const d=await r.json(),c=d.community||{};
-  return {id,how,uri:d.uri,have:c.have,want:c.want,rating:c.rating,styles:d.styles||[],genres:d.genres||[],forSale:d.num_for_sale,country:d.country,year:d.year};
+  if(!v)return;
+  audio.pause();
+  if($('ytStatus'))$('ytStatus').textContent='';
+  const b=$('ytbox');b.hidden=false;
+  b.innerHTML=`<div class="yt"><iframe src="https://www.youtube-nocookie.com/embed/${v.id}?autoplay=1&rel=0" title="YouTube video for ${esc(T.title)}" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe></div>
+   <p class="note">${v.how==='link'?'Video linked to this recording in MusicBrainz.':'Best match on YouTube: '+esc(v.title)+'. It may not be the exact recording.'} <button class="link" id="ytClose">Close video</button></p>`;
+  $('ytClose').addEventListener('click',ytClose);
 }
 const WIKI={SU:'Music of the Soviet Union',YU:'Music of Yugoslavia',XG:'Music of Germany',DD:'Music of Germany'};
 const LOAD={
@@ -476,12 +493,11 @@ const LOAD={
   },
   async record(g,F){
     const R=S.record;
-    discogsFacts(R).then(d=>{F.discogs=d}).catch(()=>{F.discogs={error:"Couldn't reach Discogs."}}).finally(()=>{if(g===G.record&&view==='record')renderFacts();});
     if(R.rg){try{F.editions=(await mb(`release?release-group=${R.rg}&limit=1`))['release-count'];}catch(e){F.editions=null}}
-    if(g!==G.record)return;renderFacts();
+    if(g!==G.record)return;if(view==='track')renderFacts();
     if(R.labelId){
       try{F.labelInfo=await mb(`label/${R.labelId}`);}catch(e){F.labelInfo=null}
-      if(g!==G.record)return;renderFacts();
+      if(g!==G.record)return;if(view==='track')renderFacts();
       try{F.labelCount=(await mb(`release?label=${R.labelId}&limit=1`))['release-count'];}catch(e){F.labelCount=null}
     }
   },
@@ -604,34 +620,28 @@ function scanMap(on){
   scanTimer=setInterval(()=>{const n=WORLD.features.length,pick=new Set(Array.from({length:6},()=>rint(n)));mG.selectAll('path.c').classed('flash',(d,i)=>pick.has(i));},140);
 }
 
-/* ---------- record scene: crate ---------- */
 const TINTS=['#2b44ff','#ff3d7f','#e9e4d8','#1d1d22','#ffb000','#00a88f','#7b3cff','#c8102e','#3d3d48'];
 function hue(s){let h=0;for(const ch of s)h=(h*31+ch.charCodeAt(0))>>>0;return h;}
-function vizRecord(state){
-  const box=$('cratebox'),R=S.record;
-  if(state==='riffle'||!R){
-    box.className='cratebox'+(state==='riffle'?' riffling':'');
-    box.innerHTML=`<div class="riffle">${TINTS.map((c,i)=>`<i style="background:${c};animation-delay:${i*.11}s;transform:translateY(${(8-i)*-3}px)"></i>`).join('')}</div>`+
-      (state==='riffle'?'':`<p class="hint" style="position:absolute;bottom:18px">${S.place?'Press “Pull a record” to dig through this crate.':'Draw a year and a place first, then pull a record.'}</p>`);
-    return;
-  }
-  box.className='cratebox';
-  const h=hue(R.id),c1=TINTS[h%TINTS.length],c2=TINTS[(h>>3)%TINTS.length];
-  box.innerHTML=`<div class="pulled pop" id="pulled"><div class="sleeve"><div class="gen" style="background:linear-gradient(${h%360}deg,${c1},${c2})"><b>${esc(clip(R.title,60))}</b><span>${esc(clip(R.artist,50))}</span></div><img alt="Cover of ${esc(R.title)}" hidden></div><div class="peek"></div></div>`;
-  const img=box.querySelector('img');let tries=0;
-  const urls=[`https://coverartarchive.org/release/${R.id}/front-500`].concat(R.rg?[`https://coverartarchive.org/release-group/${R.rg}/front-500`]:[]);
-  img.onload=()=>{img.hidden=false;};img.onerror=()=>{tries++;if(tries<urls.length)img.src=urls[tries];};img.src=urls[0];
-  requestAnimationFrame(()=>requestAnimationFrame(()=>{const p=$('pulled');p&&p.classList.add('out');}));
-}
-
 /* ---------- track scene: tracklist ---------- */
-function vizTrack(){
+function coverInto(el,R,big){
+  const h=hue(R.id),c1=TINTS[h%TINTS.length],c2=TINTS[(h>>3)%TINTS.length];
+  el.innerHTML=`<div class="gen" style="background:linear-gradient(${h%360}deg,${c1},${c2})"><b>${esc(clip(R.title,big?60:24))}</b><span>${esc(clip(R.artist,50))}</span></div><img alt="Cover of ${esc(R.title)}" hidden>`;
+  const img=el.querySelector('img');let tries=0;
+  const urls=[`https://coverartarchive.org/release/${R.id}/front-250`].concat(R.rg?[`https://coverartarchive.org/release-group/${R.rg}/front-250`]:[]);
+  img.onload=()=>{img.hidden=false;};img.onerror=()=>{tries++;if(tries<urls.length)img.src=urls[tries];};img.src=urls[0];
+}
+function vizTrack(state){
   const box=$('trackbox'),R=S.record,T=S.track;
-  $('trackTitle').textContent=R?clip(R.title,60):'Tracklist';
-  if(!R){box.innerHTML='<p class="hint" style="margin:auto">Pull a record first. Its tracklist shows up here.</p>';return;}
-  const avg=d3.mean(R.tracks,t=>t.length||0)||1;
-  box.innerHTML=`<div class="sidebar" aria-hidden="true">${R.tracks.map((t,i)=>`<i style="flex-grow:${(t.length||avg)}" class="${T&&T.i===i?'on':''}"></i>`).join('')}</div>
+  $('trackTitle').textContent=R?'Tracklist':'The crate';
+  if(state==='riffle'){
+    box.innerHTML=`<div class="cratebox riffling" style="height:100%"><div class="riffle">${TINTS.map((c,i)=>`<i style="background:${c};animation-delay:${i*.11}s;transform:translateY(${(8-i)*-3}px)"></i>`).join('')}</div></div>`;return;
+  }
+  if(!R){box.innerHTML=`<p class="hint" style="margin:auto">${S.place?'Press “Drop the needle”. A record by an artist from '+esc(S.place.name)+' gets pulled, then one of its tracks.':'Draw a year and a place first.'}</p>`;return;}
+  const avg=d3.mean(R.tracks,t=>t.length||0)||1,typ=R.type?(R.type==='EP'?'EP':R.type.toLowerCase()):'release';
+  box.innerHTML=`<div class="rechead pop"><div class="thumb" id="thumb"></div><div><b>${esc(R.title)}</b><span>${esc(R.artist)} · ${esc(typ)} · ${esc((R.date||'').slice(0,4))}</span></div></div>
+   <div class="sidebar" aria-hidden="true">${R.tracks.map((t,i)=>`<i style="flex-grow:${(t.length||avg)}" class="${T&&T.i===i?'on':''}"></i>`).join('')}</div>
    <ol class="tlist" id="tlist">${R.tracks.map((t,i)=>`<li class="${T&&T.i===i?'pick':''}"><span class="n">${esc(t.number||i+1)}</span><span>${esc(t.title)}</span><span class="l">${len(t.length)||''}</span></li>`).join('')}</ol>`;
+  coverInto($('thumb'),R,false);
   if(T)scrollRow(T.i);
 }
 function scrollRow(i){const l=$('tlist');if(!l)return;const li=l.children[i];if(li)l.scrollTop=li.offsetTop-l.offsetTop-l.clientHeight/2+li.offsetHeight/2;}
@@ -668,7 +678,7 @@ function factsPlace(){
   const P=S.place,Y=S.year,F=FX.place;
   if(!P)return `<h2>Where is the artist from?</h2><p class="sub">${Y?`Next, a random release from ${Y.y} gets pulled, and the place is where its artist comes from. Countries whose artists released more music that year come up more often.`:'Draw a year first.'}</p>`;
   const c=P.code,big=P.sub?withThe(c):withThe(c);
-  let body=`<h2>${esc(P.name)}</h2><p class="sub">${P.city?`Your next record comes from an artist from ${esc(P.city)}, ${esc(P.name)}.`:`Your next record comes from an artist from ${esc(P.name)}.`}</p>
+  let body=`<h2>${esc(P.name)}</h2><p class="sub">${P.city?`Your track will come from an artist from ${esc(P.city)}, ${esc(P.name)}.`:`Your track will come from an artist from ${esc(P.name)}.`}</p>
    <div class="big"><b>${F.artists===undefined?'…':F.artists!=null?fmt(F.artists):'?'}</b><span>artists from ${esc(big)} are listed in MusicBrainz</span></div>`;
   if(HIST[c])body+=`<p class="note">${esc(placeName(c))} no longer exists. The map shows the countries on its former territory.</p>`;
   body+=`<dl class="rows">${row('Hometown',P.city?esc(P.city):null)}${row(`Issued there in ${Y.y}`,F.rel===undefined?W8:F.rel!=null?fmt(F.rel)+' releases':null)}${row('Issued there, all years',F.total===undefined?W8:F.total!=null?fmt(F.total)+' releases':null)}</dl>`;
@@ -676,45 +686,36 @@ function factsPlace(){
   else if(!F.wikiDone)body+=`<p class="wait">Looking up its music history…</p>`;
   return body+`<p>${src(MB+'search?type=artist&method=advanced&query='+encodeURIComponent('country:'+c))}</p>`;
 }
-function factsRecord(){
-  const R=S.record,P=S.place,F=FX.record;
-  if(!R)return `<h2>Pull a record</h2><p class="sub">${P?`A random ${S.year.y} release by an artist from ${esc(P.name)}.`:'Draw a year and a place first.'}</p>`;
+function recordBlock(){
+  const R=S.record,F=FX.record;if(!R)return '';
   const run=d3.sum(R.tracks,t=>t.length||0),L=F.labelInfo;
   const lab=R.label?esc(R.label)+(R.catno?` <span class="note">${esc(R.catno)}</span>`:''):R.selfReleased?'No label (self-released or white label)':'Not listed';
   const typ=R.type?(R.type==='EP'?'EP':R.type):null;
-  return `<h2>${esc(R.title)}</h2><p class="sub">${esc(R.artist)}</p>
-   <div class="big"><b>1 in ${odds(S.year.count)}</b><span>chance of pulling this exact record from ${S.year.y}'s releases</span></div>
-   <dl class="rows">${row('Type',typ&&esc(typ))}${row('Released',esc(R.date))}${row('Released in',R.relCountry?esc(R.relCountry==='XW'?'Worldwide (usually digital)':placeName(R.relCountry)):null)}${row('Format',R.formats.length?esc(R.formats.join(', ')):'Not listed')}
+  return `<div class="ext"><p class="exth">From the ${typ?esc(typ.toLowerCase()==='ep'?'EP':typ.toLowerCase()):'record'} <i>${esc(R.title)}</i></p>
+   <dl class="rows">${row('Released',esc(R.date))}${row('Released in',R.relCountry?esc(R.relCountry==='XW'?'Worldwide (usually digital)':placeName(R.relCountry)):null)}${row('Format',R.formats.length?esc(R.formats.join(', ')):'Not listed')}
    ${row('Tracks',`${R.tracks.length}${R.discs>1?` on ${R.discs} discs`:''}${run?` · ${len(run)}`:''}`)}${row('Label',lab)}
    ${R.labelId?row('About the label',L===undefined?W8:L?[L.type&&esc(L.type.toLowerCase()),L.area&&'based in '+esc(L.area.name),L['life-span']&&L['life-span'].begin&&'founded '+esc(L['life-span'].begin.slice(0,4))].filter(Boolean).join(', ')||'No details yet':null):''}
    ${R.labelId?row('Label catalogue',F.labelCount===undefined?W8:F.labelCount!=null?fmt(F.labelCount)+' releases':null):''}
-   ${R.rg?row('Editions',F.editions===undefined?W8:F.editions!=null?(F.editions===1?'This is the only edition':`One of ${fmt(F.editions)} editions of this ${typ?esc(typ.toLowerCase()):'release'}`):null):''}
-   ${row('Genres',R.genres.length?esc(R.genres.slice(0,4).join(', ')):null)}</dl>
-   ${discogsBlock(F.discogs)}
-   <p>${src(MB+'release/'+R.id)}</p>`;
-}
-function discogsBlock(D){
-  if(D===undefined)return `<div class="ext"><p class="exth">On Discogs</p><p class="wait">Checking Discogs…</p></div>`;
-  if(D.error)return `<div class="ext"><p class="exth">On Discogs</p><p class="note">${esc(D.error)}</p></div>`;
-  if(D.none)return `<div class="ext"><p class="exth">On Discogs</p><p class="note">This record isn't linked to Discogs in MusicBrainz.${D.canSearch?' Add a Discogs token under Sources below to search for it.':' A search found no match.'}</p></div>`;
-  const r=D.rating&&D.rating.count?`${D.rating.average.toFixed(1)} / 5 from ${fmt(D.rating.count)} rating${D.rating.count>1?'s':''}`:null;
-  return `<div class="ext"><p class="exth">On Discogs${D.how==='search'?' <span class="note">(best match by search)</span>':''}</p><dl class="rows">
-    ${row('Collectors',D.have!=null?`${fmt(D.have)} own it · ${fmt(D.want||0)} want it`:null)}${row('Styles',D.styles.length?esc(D.styles.slice(0,4).join(', ')):null)}
-    ${row('Rating',r)}${row('For sale',D.forSale?fmt(D.forSale)+' copies listed':D.forSale===0?'None listed right now':null)}</dl>
-    <p><a class="src" href="${esc(D.uri)}" target="_blank" rel="noopener">See it on Discogs</a></p></div>`;
+   ${R.rg?row('Editions',F.editions===undefined?W8:F.editions!=null?(F.editions===1?'This is the only edition':`One of ${fmt(F.editions)} editions`):null):''}</dl>
+   <p>${src(MB+'release/'+R.id,'Record on MusicBrainz')}</p></div>`;
 }
 function factsTrack(){
-  const T=S.track,R=S.record,F=FX.track;
-  if(!T)return `<h2>Drop the needle</h2><p class="sub">${R?`One of the ${R.tracks.length} tracks on ${esc(R.title)}.`:'Pull a record first.'}</p>`;
+  const T=S.track,R=S.record,P=S.place,F=FX.track;
+  if(!T)return `<h2>Drop the needle</h2><p class="sub">${P?`A random ${S.year.y} record by an artist from ${esc(P.name)} gets pulled, then one track from it.`:'Draw a year and a place first.'}</p>`;
   const A=F.artist,avg=d3.mean(R.tracks.filter(t=>t.length),t=>t.length);
   const diff=T.length&&avg&&R.tracks.length>1?Math.round((T.length/avg-1)*100):null;
   const kind=A&&A.type?({Person:'Solo artist',Group:'Group',Orchestra:'Orchestra',Choir:'Choir',Character:'Character'}[A.type]||A.type):null;
   const where=A&&(A['begin-area']||A.area);
   const genres=(R.genres.length?R.genres:(A&&A.genres||[]).sort((x,y)=>y.count-x.count).map(g=>g.name)).slice(0,3);
   const q=encodeURIComponent(`${T.artist} ${T.title}`);
+  const canYT=T.yt||YT_KEY;
+  const dz=F.deezer===undefined?'<span class="wait">Checking Deezer for a preview…</span>':F.deezer&&F.deezer.preview?`<button class="pill solid" id="playBtn" aria-pressed="false">▶ Play preview</button>`:'';
+  const yt=canYT?`<button class="pill" id="ytBtn">▶ ${T.yt?'Play':'Find'} on YouTube</button>`:`<a class="pill" href="https://www.youtube.com/results?search_query=${q}" target="_blank" rel="noopener">Search YouTube ↗</a>`;
   return `<h2>${esc(T.title)}</h2><p class="sub">${esc(T.artist)}</p>
    <div class="big"><b>1 in ${odds(TOTAL*T.total)}</b><span>chance of drawing this exact track out of all recorded music</span></div>
-   ${F.deezer===undefined?'<p class="wait">Looking for a preview on Deezer…</p>':F.deezer&&F.deezer.preview?`<div class="player"><button class="pill solid" id="playBtn" aria-pressed="false">▶ Play preview</button><div class="prog"><i id="playProg"></i></div><a class="src" href="${esc(F.deezer.link)}" target="_blank" rel="noopener">30-second preview from Deezer${F.deezer.how==='search'?' (matched by title)':''}</a></div>`:'<p class="note">No preview found on Deezer for this one.</p>'}
+   <div class="btns" style="margin:0 0 6px">${dz}${yt}</div>
+   ${F.deezer&&F.deezer.preview?`<div class="player" style="margin:6px 0 4px"><div class="prog" style="grid-column:1/-1"><i id="playProg"></i></div><a class="src" href="${esc(F.deezer.link)}" target="_blank" rel="noopener">30-second preview from Deezer${F.deezer.how==='search'?' (matched by title)':''}</a></div>`:F.deezer===null?'<p class="note">No preview on Deezer for this one.</p>':''}
+   <p class="note" id="ytStatus" role="status"></p>
    <dl class="rows">${row('Position',`Track ${esc(T.number||T.i+1)} of ${T.total}${R.discs>1?`, disc ${T.disc}`:''}`)}
    ${row('Length',len(T.length)?len(T.length)+(diff!=null&&Math.abs(diff)>=5?` · ${Math.abs(diff)}% ${diff>0?'longer':'shorter'} than this record's average`:''):null)}
    ${T.recording?row('Appears on',F.appears===undefined?W8:F.appears!=null?(F.appears===1?'Only this release':`${fmt(F.appears)} releases (reissues, compilations…)`):null):''}
@@ -724,19 +725,19 @@ function factsTrack(){
    ${row('Plays logged',F.lb===undefined?W8:F.lb.rec?`${fmt(F.lb.rec.plays)} by ${fmt(F.lb.rec.users)} listener${F.lb.rec.users===1?'':'s'}${F.lb.rec.exact?'':' (all versions)'}`:'None on ListenBrainz yet')}
    ${T.artistId&&T.artistId!==VA?row('Artist plays',F.lb===undefined?W8:F.lb.artist?`${fmt(F.lb.artist.plays)} by ${fmt(F.lb.artist.users)} listener${F.lb.artist.users===1?'':'s'}`:'None on ListenBrainz yet'):''}</dl>
    <p class="note">Play counts come from <a href="https://listenbrainz.org" target="_blank" rel="noopener">ListenBrainz</a>, an open project where people log what they listen to. They show what its users play, not total streams.</p>
-   <div class="btns">${[['YouTube','https://www.youtube.com/results?search_query='+q],['Bandcamp','https://bandcamp.com/search?q='+q],['Discogs','https://www.discogs.com/search/?type=all&q='+encodeURIComponent(T.artist+' '+R.title)]].map(([n,h])=>`<a class="pill" href="${h}" target="_blank" rel="noopener">${n}</a>`).join('')}</div>
-   <div class="btns"><button class="pill solid" id="save">Save to my crate</button><button class="pill" id="copy">Copy to share</button></div>
+   ${recordBlock()}
+   <div class="btns"><a class="pill" href="https://bandcamp.com/search?q=${q}" target="_blank" rel="noopener">Bandcamp ↗</a><button class="pill solid" id="save">Save to my crate</button><button class="pill" id="copy">Copy to share</button></div>
    <p class="note" id="copyStatus" role="status"></p>
    <p>${T.recording?src(MB+'recording/'+T.recording):''}</p>`;
 }
-const FACTS={year:factsYear,place:factsPlace,record:factsRecord,track:factsTrack};
+const FACTS={year:factsYear,place:factsPlace,track:factsTrack};
 function renderFacts(){$('facts').innerHTML=FACTS[view]();syncPlayer();}
 
 /* ---------- stepper + views ---------- */
 function renderSteps(){
   const {year:Y,place:P,record:R,track:T}=S;
   const set=(k,v)=>{const el=$('v-'+k);el.textContent=v||'Not drawn yet';el.classList.toggle('empty',!v);};
-  set('year',Y&&String(Y.y));set('place',P&&P.name);set('record',R&&R.title);set('track',T&&T.title);
+  set('year',Y&&String(Y.y));set('place',P&&P.name);set('track',T&&T.title);
   const next=STEPS.find(k=>!S[k]);
   document.querySelectorAll('.step').forEach(li=>{const k=li.dataset.step,ok=!!S[k]||k===next;li.classList.toggle('cur',k===view);li.setAttribute('aria-disabled',ok?'false':'true');li.setAttribute('aria-current',k===view?'step':'false');});
   STEPS.forEach(k=>document.querySelector(`[data-redo="${k}"]`).hidden=!S[k]);
@@ -748,7 +749,7 @@ function renderSteps(){
 function show(k,anim=false){
   view=k;
   document.querySelectorAll('.view').forEach(v=>v.hidden=v.dataset.view!==k);
-  if(k==='year')vizYear(anim);if(k==='place')vizPlace(anim);if(k==='record')vizRecord();if(k==='track')vizTrack();
+  if(k==='year')vizYear(anim);if(k==='place')vizPlace(anim);if(k==='track')vizTrack();
   renderSteps();renderFacts();
 }
 document.querySelectorAll('.step').forEach(li=>{
@@ -758,7 +759,8 @@ document.querySelectorAll('.step').forEach(li=>{
 });
 
 /* ---------- running a step ---------- */
-function clearFrom(k){stopAudio();STEPS.slice(STEPS.indexOf(k)).forEach(s=>{S[s]=null;FX[s]={};G[s]++;});}
+const ORDER=['year','place','record','track'];
+function clearFrom(k){stopAudio();ytClose();ORDER.slice(ORDER.indexOf(k==='track'?'record':k)).forEach(s=>{S[s]=null;FX[s]={};G[s]++;});}
 function setStatus(m,err){$('status').textContent=m;$('status').classList.toggle('err',!!err);}
 async function run(k){
   busy=true;clearFrom(k);setStatus(MSG[k]);show(k);
@@ -766,12 +768,12 @@ async function run(k){
   try{
     if(k==='year'){const r=await drawYear();await scanYears(r.y);S.year=r;TL.zoom=true;vizYear(true);}
     if(k==='place'){scanMap(true);const r=await drawPlace();scanMap(false);S.place=r;vizPlace(true);}
-    if(k==='record'){vizRecord('riffle');const r=await drawRecord();S.record=r;vizRecord();}
-    if(k==='track'){vizTrack();const r=await drawTrack();S.track=r;await rouletteTrack(r.i);vizTrack();}
+    if(k==='track'){vizTrack('riffle');const rec=await drawRecord();S.record=rec;vizTrack();await sleep(500);const r=await drawTrack();S.track=r;await rouletteTrack(r.i);vizTrack();}
     setStatus('');
-  }catch(e){if(k==='place')scanMap(false);if(k==='record')vizRecord();setStatus(e.message,true);}
+  }catch(e){if(k==='place')scanMap(false);if(k==='track'){S.record=null;vizTrack();}setStatus(e.message,true);}
   busy=false;renderSteps();renderFacts();
-  if(S[k]){LOAD[k](g,FX[k]).then(()=>{if(g===G[k]&&view===k)renderFacts();}).catch(()=>{});}
+  if(S[k]){if(k==='track'){const gr=G.record;LOAD.record(gr,FX.record).then(()=>{if(gr===G.record&&view==='track')renderFacts();}).catch(()=>{});}
+    LOAD[k](g,FX[k]).then(()=>{if(g===G[k]&&view===k)renderFacts();}).catch(()=>{});}
   return !!S[k];
 }
 $('go').addEventListener('click',async()=>{const next=STEPS.find(k=>!S[k]);await run(next||'year');});
@@ -795,7 +797,8 @@ function renderCrate(){
 $('crate').addEventListener('click',e=>{const b=e.target.closest('.x');if(!b)return;crate.splice(+b.dataset.i,1);store(crate);renderCrate();});
 $('facts').addEventListener('click',async e=>{
   const {year:Y,place:P,record:R,track:T}=S;if(!T)return;
-  if(e.target.id==='playBtn'){const d=FX.track.deezer;if(!d)return;if(audio.src!==d.preview)audio.src=d.preview;audio.paused?audio.play().catch(()=>{}):audio.pause();return;}
+  if(e.target.id==='ytBtn'){playYouTube();return;}
+  if(e.target.id==='playBtn'){if(!$('ytbox').hidden)ytClose();const d=FX.track.deezer;if(!d)return;if(audio.src!==d.preview)audio.src=d.preview;audio.paused?audio.play().catch(()=>{}):audio.pause();return;}
   if(e.target.id==='save'){
     if(crate.some(c=>c.rid===R.id&&c.t===T.title)){$('copyStatus').textContent='Already in your crate.';return;}
     crate.unshift({y:Y.y,t:T.title,a:T.artist,r:R.title,p:P.name,rid:R.id});crate=crate.slice(0,100);store(crate);renderCrate();$('copyStatus').textContent='Saved to your crate.';
@@ -806,10 +809,6 @@ $('facts').addEventListener('click',async e=>{
   }
 });
 
-function syncTok(){const t=dtok();$('dstat').textContent=t?'A Discogs token is saved in this browser.':'No Discogs token saved.';$('dclear').hidden=!t;}
-$('dform').addEventListener('submit',e=>{e.preventDefault();const v=$('dtok').value.trim();if(!v)return;try{localStorage.setItem(DKEY,v)}catch(x){}$('dtok').value='';syncTok();});
-$('dclear').addEventListener('click',()=>{try{localStorage.removeItem(DKEY)}catch(x){}syncTok();});
-syncTok();
 /* ---------- can this page reach the internet? ---------- */
 async function netCheck(){
   const ctl=new AbortController(),t=setTimeout(()=>ctl.abort(),9000);
